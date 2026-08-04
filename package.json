@@ -1,0 +1,19 @@
+{
+  "name": "ai-task-brief-builder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:tools": "node --import tsx tests/tool.test.ts",
+    "test:mcp:local": "node --import tsx tests/mcp-http.test.ts",
+    "test:mcp:production": "node tests/mcp-production.test.mjs",
+    "test": "npm run typecheck && npm run test:tools && npm run test:mcp:local"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "tsx": "^4.23.5",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.118.0"
+  }
+}

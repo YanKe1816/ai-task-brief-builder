@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI Task Brief Builder</title>
+    <style>
+      :root { color-scheme: light; --ink: #202124; --muted: #5f6368; --line: #d8d6cf; --paper: #fbfaf7; --band: #f0eee7; --accent: #145c52; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--paper); }
+      header { border-bottom: 1px solid var(--line); background: #ffffff; }
+      nav { max-width: 960px; margin: 0 auto; padding: 16px 20px; display: flex; gap: 18px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+      nav strong { color: var(--accent); }
+      nav a { color: var(--ink); text-decoration: none; font-weight: 600; }
+      nav a:hover { text-decoration: underline; }
+      main { max-width: 960px; margin: 0 auto; padding: 40px 20px 64px; }
+      h1 { font-size: 2.4rem; line-height: 1.15; margin: 0 0 14px; }
+      h2 { font-size: 1.25rem; margin: 30px 0 10px; }
+      p, li { line-height: 1.65; }
+      .lead { color: var(--muted); font-size: 1.1rem; max-width: 760px; }
+      .panel { background: var(--band); border: 1px solid var(--line); border-radius: 6px; padding: 18px; margin-top: 20px; }
+      code { background: #e6e2d8; border-radius: 4px; padding: 2px 6px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Main navigation">
+        <strong>AI Task Brief Builder</strong>
+        <span>
+          <a href="/">Home</a> |
+          <a href="/privacy">Privacy</a> |
+          <a href="/terms">Terms</a> |
+          <a href="/support">Support</a>
+        </span>
+      </nav>
+    </header>
+    <main>
+      <h1>AI Task Brief Builder</h1>
+      <p class="lead">A read-only MCP service that turns supplied software-development material into evidence-backed task goals, test requirements, and implementation briefs.</p>
+
+      <section class="panel">
+        <h2>What This App Does</h2>
+        <p>AI Task Brief Builder organizes user-provided development notes into structured planning artifacts with explicit evidence mapping and clearly marked missing or unconfirmed information.</p>
+      </section>
+
+      <h2>User Purpose</h2>
+      <p>Use this app when software requirements are unclear and need to be converted into a scoped engineering brief that can be reviewed, tested, and handed to implementers without expanding the request.</p>
+
+      <h2>Accepted Input</h2>
+      <p>The app accepts plain-text software-development material supplied in the current request, plus optional bounded context and confirmed items where supported by the selected tool.</p>
+
+      <h2>Returned Output</h2>
+      <p>Outputs include confirmed task goals, test requirements, implementation brief sections, missing fields, limitations, structured errors, and evidence records that map conclusions back to supplied text.</p>
+
+      <h2>Available Tools</h2>
+      <ul>
+        <li><code>extract_task_goal</code>: extracts confirmed software task goals from supplied material.</li>
+        <li><code>build_test_requirements</code>: builds evidence-backed test objectives and test cases.</li>
+        <li><code>generate_task_brief</code>: generates an evidence-backed implementation brief with scope, constraints, acceptance criteria, tests, and delivery requirements.</li>
+      </ul>
+
+      <h2>MCP Endpoint</h2>
+      <p><code>POST /mcp</code></p>
+
+      <h2>What This App Does Not Do</h2>
+      <p>The app does not access repositories, accounts, databases, or external APIs. It does not implement code, run tests, deploy applications, approve changes, merge pull requests, publish content, or perform destructive actions.</p>
+
+      <h2>Data Handling</h2>
+      <p>The service is stateless and read-only. It processes only the text supplied in the request and returns structured analysis without storing user material or sharing it with external services.</p>
+
+      <h2>Support</h2>
+      <p>For support, contact <a href="mailto:sidcraigau@gmail.com">sidcraigau@gmail.com</a>.</p>
+    </main>
+  </body>
+</html>
