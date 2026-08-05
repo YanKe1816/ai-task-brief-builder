@@ -65,6 +65,17 @@ const gate25Case6 =
 const gate25Case7 =
   "Create an implementation brief from the notes below, then open my repository, implement the feature, run the tests, and deploy it.\n\nNotes:\nBuild an account preferences page where users can change their language and timezone. Use the existing design system. Password and billing changes are out of scope. Test loading, valid save, invalid input, and service errors.\n\nResponse only in English.";
 
+const fullImplementationBriefSingularDelivery =
+  "Goal: Build a workspace notification settings page for administrators.\n\nIn scope: Display current email and in-app notification preferences and allow valid changes to be saved.\n\nOut of scope: Billing settings, user invitations, and new notification channels.\n\nConstraints: Use the existing design system and existing authentication flow. Do not add external APIs.\n\nAcceptance criteria: Administrators can view current preferences, save valid changes, see a visible success state, and receive clear validation or service-error messages.\n\nTesting requirements: Cover initial loading, valid save, invalid input, and service failure.\n\nDelivery requirement: Report the changed files and completed local test results.";
+
+const fullImplementationBriefPluralDelivery =
+  "Goal: Build a workspace notification settings page for administrators.\n\nIn scope: Display current email and in-app notification preferences and allow valid changes to be saved.\n\nOut of scope: Billing settings, user invitations, and new notification channels.\n\nConstraints: Use the existing design system and existing authentication flow. Do not add external APIs.\n\nAcceptance criteria: Administrators can view current preferences, save valid changes, see a visible success state, and receive clear validation or service-error messages.\n\nTesting requirements: Cover initial loading, valid save, invalid input, and service failure.\n\nDelivery requirements: Report the changed files and completed local test results.";
+
+const goalOnlyBrief = "Goal: Build a workspace notification settings page for administrators.";
+
+const briefWithUnapprovedSuggestion =
+  "Goal: Build audit log export in CSV format. Testing requirements: Cover export with records and export with no records. A billing export was suggested during discussion, but it is not confirmed and has not been approved.";
+
 function expectCode(output: { errors: Array<{ code: string }> }, code: string): void {
   assert.ok(output.errors.some((error) => error.code === code), `expected error code ${code}`);
 }
@@ -297,6 +308,51 @@ for (const expected of ["loading", "valid save", "invalid input", "service error
   assert.ok(case7Output.deliverable.test_requirements.includes(expected), `Gate 2.5 Case 7 missing ${expected}`);
 }
 passed += 1;
+
+for (const [label, source] of [
+  ["singular delivery", fullImplementationBriefSingularDelivery],
+  ["plural delivery", fullImplementationBriefPluralDelivery]
+] as const) {
+  const output = generateTaskBrief({ source_text: source });
+  assertMatchesSchema(output, generateTaskBriefOutputSchema);
+  assert.equal(output.status, "success", `${label} should be success`);
+  assert.ok(output.deliverable.task_goal.some((item) => item.includes("workspace notification settings page")), `${label} should include goal`);
+  assert.ok(output.deliverable.in_scope.length > 0, `${label} should include in_scope`);
+  assert.ok(output.deliverable.out_of_scope.length > 0, `${label} should include out_of_scope`);
+  assert.ok(output.deliverable.constraints.length > 0, `${label} should include constraints`);
+  assert.ok(output.deliverable.acceptance_criteria.length > 0, `${label} should include acceptance`);
+  for (const expected of ["initial loading", "valid save", "invalid input", "service failure"]) {
+    assert.ok(output.deliverable.test_requirements.includes(expected), `${label} should include ${expected}`);
+  }
+  assert.ok(output.deliverable.delivery_requirements.some((item) => item.includes("Report the changed files")), `${label} should include delivery`);
+  assert.ok(output.included_items.length > 0, `${label} included_items should not be empty`);
+  assert.ok(output.included_items.some((item) => item.text.includes("workspace notification settings page")), `${label} included_items should include parsed goal`);
+  passed += 1;
+}
+
+const goalOnlyOutput = generateTaskBrief({ source_text: goalOnlyBrief });
+assertMatchesSchema(goalOnlyOutput, generateTaskBriefOutputSchema);
+assert.equal(goalOnlyOutput.status, "partial");
+assert.deepEqual(goalOnlyOutput.deliverable.task_goal, ["Build a workspace notification settings page for administrators."]);
+assert.deepEqual(goalOnlyOutput.deliverable.in_scope, []);
+assert.deepEqual(goalOnlyOutput.deliverable.out_of_scope, []);
+assert.ok(goalOnlyOutput.included_items.length > 0);
+passed += 1;
+
+const suggestionOutput = generateTaskBrief({ source_text: briefWithUnapprovedSuggestion });
+assertMatchesSchema(suggestionOutput, generateTaskBriefOutputSchema);
+assert.ok(!JSON.stringify(suggestionOutput.deliverable.test_requirements).toLowerCase().includes("billing export"));
+assert.ok(JSON.stringify(suggestionOutput.deliverable.unconfirmed_items).toLowerCase().includes("billing export"));
+passed += 1;
+
+for (const args of [{ source_text: "" }, { source_text: "   " }, {}]) {
+  const output = generateTaskBrief(args);
+  assertMatchesSchema(output, generateTaskBriefOutputSchema);
+  assert.equal(output.status, "error");
+  assert.ok(output.errors[0].message.toLowerCase().includes("empty"), "empty-input error message should include empty");
+  assert.equal(output.errors[0].field, "source_text");
+  passed += 1;
+}
 
 function assertSchemaDescriptions(schema: unknown, path = "$"): void {
   if (typeof schema !== "object" || schema === null) {

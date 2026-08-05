@@ -419,13 +419,13 @@ function validateCommonArguments(args: ToolArguments): { sourceText?: string; er
     return { errors: [makeError("invalid_input_type", "Tool arguments must be an object.", "arguments")] };
   }
   if (!Object.hasOwn(args, "source_text")) {
-    return { errors: [makeError("missing_required_input", "source_text is required.", "source_text")] };
+    return { errors: [makeError("missing_required_input", "source_text is required and cannot be empty.", "source_text")] };
   }
   if (typeof args.source_text !== "string") {
     return { errors: [makeError("invalid_input_type", "source_text must be a string.", "source_text")] };
   }
   if (args.source_text.length === 0 || args.source_text.trim().length === 0) {
-    return { errors: [makeError("empty_input", "source_text must contain non-whitespace material.", "source_text")] };
+    return { errors: [makeError("empty_input", "source_text is empty; provide non-whitespace material.", "source_text")] };
   }
   if (args.context !== undefined && !isPlainObject(args.context)) {
     return { errors: [makeError("invalid_input_type", "context must be an object when provided.", "context")] };
@@ -588,7 +588,7 @@ function classifySentence(text: string): Category {
   ) {
     return "test_requirements";
   }
-  if (/^delivery requirements?:\b/.test(lower) || /\b(provide changed files|local test results|handoff|deliverable)\b/.test(lower)) {
+  if (/^delivery requirements?:/.test(lower) || /\b(provide changed files|local test results|handoff|deliverable)\b/.test(lower)) {
     return "delivery_requirements";
   }
   return "unclassified";
@@ -680,6 +680,26 @@ function normalizeCategoryText(text: string, category: Category): string {
 
 function itemsFor(items: ClassifiedItem[], category: Category): ClassifiedItem[] {
   return items.filter((item) => item.category === category && item.confirmed);
+}
+
+function includedItemsFromClassified(items: ClassifiedItem[], providedItems: ConfirmedItem[]): ConfirmedItem[] {
+  const fromClassified = items
+    .filter((item) => item.confirmed && item.category !== "unclassified")
+    .map((item) => ({
+      item_id: item.item_id,
+      text: item.text,
+      status: "confirmed" as const,
+      evidence_ids: [item.evidence_id]
+    }));
+  const seen = new Set<string>();
+  return [...providedItems, ...fromClassified].filter((item) => {
+    const key = `${item.status}:${item.text}:${item.evidence_ids.join(",")}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function deriveMissingFieldsFromItems(items: ClassifiedItem[]): string[] {
@@ -876,7 +896,7 @@ export function buildTestRequirements(args: ToolArguments): TestRequirementsOutp
           test_cases: [],
           unconfirmed_test_requirements: ["Specific expected behavior and acceptance signals are not confirmed in the supplied material.", ...unconfirmedItems]
         },
-        included_items: confirmed.includedItems,
+        included_items: includedItemsFromClassified(items, confirmed.includedItems),
         missing_fields: deriveMissingFieldsFromItems(items),
         limitations: ["No tests were executed. Requirements are derived only from supplied text."],
         evidence,
@@ -892,7 +912,7 @@ export function buildTestRequirements(args: ToolArguments): TestRequirementsOutp
         test_cases: cases,
         unconfirmed_test_requirements: [...deriveMissingFieldsFromItems(items).filter((field) => field === "test_requirements"), ...unconfirmedItems]
       },
-      included_items: confirmed.includedItems,
+      included_items: includedItemsFromClassified(items, confirmed.includedItems),
       missing_fields: deriveMissingFieldsFromItems(items),
       limitations: ["No tests were executed. This output is a requirements brief only."],
       evidence,
@@ -934,7 +954,7 @@ export function generateTaskBrief(args: ToolArguments): TaskBriefOutput {
           delivery_requirements: itemsFor(items, "delivery_requirements").map((item) => item.text),
           unconfirmed_items: ["Task goal needs explicit confirmation.", ...unconfirmedItems, ...missingFields]
         },
-        included_items: confirmed.includedItems,
+        included_items: includedItemsFromClassified(items, confirmed.includedItems),
         missing_fields: missingFields,
         limitations: ["The brief uses only supplied material and does not claim implementation or test execution."],
         evidence,
@@ -954,7 +974,7 @@ export function generateTaskBrief(args: ToolArguments): TaskBriefOutput {
         delivery_requirements: itemsFor(items, "delivery_requirements").map((item) => item.text),
         unconfirmed_items: [...unconfirmedItems, ...missingFields]
       },
-      included_items: confirmed.includedItems,
+      included_items: includedItemsFromClassified(items, confirmed.includedItems),
       missing_fields: missingFields,
       limitations: ["No repository access, implementation, deployment, or test execution was performed."],
       evidence,
