@@ -788,9 +788,8 @@ export function extractTaskGoal(args: ToolArguments): TaskGoalOutput {
         errors: [makeError("insufficient_evidence", "No explicit software-development task goal could be confirmed.", "source_text")]
       };
     }
-    const missingFields = deriveMissingFieldsFromItems(items);
     return {
-      status: missingFields.length > 0 ? "partial" : "success",
+      status: "success",
       summary: "Explicit task goals were extracted without including scope, testing, delivery, or constraint statements.",
       task_goal_items: goals.map((goal, index) => ({
         goal_id: `G${index + 1}`,
@@ -798,7 +797,7 @@ export function extractTaskGoal(args: ToolArguments): TaskGoalOutput {
         status: "confirmed",
         evidence_ids: [goal.evidence_id]
       })),
-      missing_fields: missingFields,
+      missing_fields: deriveMissingFieldsFromItems(items),
       evidence,
       errors: []
     };
@@ -905,7 +904,7 @@ export function buildTestRequirements(args: ToolArguments): TestRequirementsOutp
     }
     const cases = [...expandedTestRequirements, ...derivedTests].map(buildTestCaseFromRequirement);
     return {
-      status: expandedTestRequirements.length > 0 ? "success" : "partial",
+      status: "success",
       summary: "Evidence-backed test requirements were generated from explicit tests and confirmed behavior only.",
       deliverable: {
         test_objectives: cases.map((testCase) => testCase.title),

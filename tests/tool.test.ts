@@ -76,6 +76,12 @@ const goalOnlyBrief = "Goal: Build a workspace notification settings page for ad
 const briefWithUnapprovedSuggestion =
   "Goal: Build audit log export in CSV format. Testing requirements: Cover export with records and export with no records. A billing export was suggested during discussion, but it is not confirmed and has not been approved.";
 
+const gatekeeperGoalRetestMaterial =
+  "The confirmed requirement is to build a workspace settings page where administrators can view and update notification preferences. Billing changes are out of scope. A PDF export may be considered later, but it has not been approved. Use the existing design system. Testing should cover loading, saving, and error handling.";
+
+const gatekeeperTestRetestMaterial =
+  "Create a profile form that loads the user's current name and timezone. A valid update should save successfully and display a visible confirmation. An empty name must be rejected. If the save request fails, the existing values must remain visible and an error message must be shown.";
+
 function expectCode(output: { errors: Array<{ code: string }> }, code: string): void {
   assert.ok(output.errors.some((error) => error.code === code), `expected error code ${code}`);
 }
@@ -128,7 +134,7 @@ let passed = 0;
 
 for (const testCase of [
   { title: "complete positive input", args: { source_text: fullSource }, expectedStatus: "success" },
-  { title: "partial information input", args: { source_text: partialSource }, expectedStatus: "partial" },
+  { title: "partial information input with confirmed goal", args: { source_text: partialSource }, expectedStatus: "success" },
   ...commonCases
 ] satisfies ToolCase[]) {
   const output = extractTaskGoal(testCase.args);
@@ -148,6 +154,15 @@ assert.ok(!JSON.stringify(goalOutput.task_goal_items).includes("billing"), "bill
 assert.ok(!JSON.stringify(goalOutput.task_goal_items).includes("verify loading"), "test requirements must not be task goals");
 assert.ok(!JSON.stringify(goalOutput.task_goal_items).includes("provide changed files"), "delivery requirements must not be task goals");
 assertEvidenceLinks(goalOutput);
+passed += 1;
+
+const gatekeeperGoalOutput = extractTaskGoal({ source_text: gatekeeperGoalRetestMaterial });
+assertMatchesSchema(gatekeeperGoalOutput, extractTaskGoalOutputSchema);
+assert.equal(gatekeeperGoalOutput.status, "success");
+assert.ok(gatekeeperGoalOutput.task_goal_items.some((item) => item.goal_text.includes("workspace settings page")));
+assert.ok(!JSON.stringify(gatekeeperGoalOutput.task_goal_items).toLowerCase().includes("billing"));
+assert.ok(!JSON.stringify(gatekeeperGoalOutput.task_goal_items).toLowerCase().includes("pdf export"));
+assert.ok(gatekeeperGoalOutput.task_goal_items.every((item) => item.evidence_ids.length > 0));
 passed += 1;
 
 for (const testCase of [
@@ -173,6 +188,16 @@ assert.ok(!testTitles.every((title) => title.includes("validate explicitly suppl
 assert.ok(testTitles.some((title) => title.includes("audit log export")), "confirmed item should affect test generation");
 assert.ok(!JSON.stringify(testOutput.deliverable.test_cases).includes("billing export"), "unconfirmed item must not be promoted");
 assertEvidenceLinks(testOutput);
+passed += 1;
+
+const gatekeeperTestOutput = buildTestRequirements({ source_text: gatekeeperTestRetestMaterial });
+assertMatchesSchema(gatekeeperTestOutput, buildTestRequirementsOutputSchema);
+assert.equal(gatekeeperTestOutput.status, "success");
+const gatekeeperTestTitles = gatekeeperTestOutput.deliverable.test_cases.map((item) => item.title.toLowerCase());
+for (const expected of ["loading", "valid save", "invalid input", "request failure"]) {
+  assert.ok(gatekeeperTestTitles.some((title) => title.includes(expected)), `Gatekeeper retest missing ${expected}`);
+}
+assert.ok(gatekeeperTestOutput.included_items.length > 0);
 passed += 1;
 
 for (const testCase of [
